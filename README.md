@@ -12,6 +12,7 @@ The app is implemented as a **single self-contained HTML file**:
 
 - `index.html` (GitHub Pages entrypoint)
 - `date_tool.html` (source copy)
+- `404.html` (fallback copy for GitHub Pages)
 
 No install, build, server, or dependencies are required.
 
@@ -32,6 +33,14 @@ No install, build, server, or dependencies are required.
 4. Save. Your site will publish from `index.html`.
 
 No build step is required.
+
+## Maintenance Note
+
+When updating the app, keep these files synchronized:
+
+- `date_tool.html`
+- `index.html`
+- `404.html`
 
 ## Main UI (Date Wheel)
 
