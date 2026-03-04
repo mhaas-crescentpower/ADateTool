@@ -1,0 +1,2186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b2a45" />
+  <title>Date Wheel Helper</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #071c2f;
+      --panel: #0b2a45;
+      --panel-2: #123a5c;
+      --text: #e7f0f7;
+      --muted: #9eb8cc;
+      --accent: #00b6d3;
+      --good: #34d399;
+      --bad: #fb7185;
+      --brand-gold: #f2b544;
+      --brand-navy: #0b2a45;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f3f8fc;
+        --panel: #ffffff;
+        --panel-2: #ecf4fb;
+        --text: #0b2a45;
+        --muted: #4a6b82;
+        --accent: #008faf;
+        --good: #059669;
+        --bad: #e11d48;
+        --brand-gold: #d2941e;
+        --brand-navy: #0b2a45;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 22% 16%, color-mix(in srgb, var(--accent) 16%, transparent) 0, transparent 42%),
+        radial-gradient(circle at 84% 8%, color-mix(in srgb, var(--brand-gold) 10%, transparent) 0, transparent 30%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      font-feature-settings: "kern" 1, "liga" 1;
+    }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: max(10px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      width: 100%;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.2rem, 2vw, 1.55rem);
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 3px 0 8px;
+      font-size: 0.84rem;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      letter-spacing: 0.01em;
+      text-transform: none;
+      font-weight: 600;
+      color: color-mix(in srgb, var(--brand-gold) 85%, #fff 10%);
+      background: color-mix(in srgb, var(--brand-gold) 14%, transparent);
+      border: 1px solid color-mix(in srgb, var(--brand-gold) 35%, transparent);
+    }
+
+    .brand-dot {
+      display: inline-grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--brand-gold) 24%, transparent);
+      border: 1px solid color-mix(in srgb, var(--brand-gold) 45%, transparent);
+      color: color-mix(in srgb, var(--brand-gold) 92%, #fff 8%);
+      font-size: 0.52rem;
+      letter-spacing: 0.02em;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .tabs {
+      display: inline-flex;
+      gap: 6px;
+      background: color-mix(in srgb, var(--panel-2) 65%, transparent);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
+      margin-bottom: 10px;
+    }
+
+    .tab-btn {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 0.86rem;
+      padding: 6px 10px;
+      cursor: pointer;
+      width: auto;
+      transition: background 140ms ease, border-color 140ms ease;
+    }
+
+    .tab-btn.active {
+      background: color-mix(in srgb, var(--accent) 22%, var(--panel));
+      border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .wheel-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 440px) minmax(280px, 1fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 920px) {
+      .wheel-layout { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: color-mix(in srgb, var(--panel) 92%, transparent);
+      border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 160ms ease, transform 160ms ease;
+    }
+
+    .card:hover {
+      border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    }
+
+    .row { display: grid; gap: 8px; }
+
+    .row-inline {
+      display: grid;
+      grid-template-columns: 1fr 110px;
+      gap: 8px;
+      align-items: end;
+    }
+
+    label { font-weight: 600; font-size: 0.92rem; }
+
+    input, select, button {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid color-mix(in srgb, var(--muted) 40%, transparent);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+      touch-action: manipulation;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      background: color-mix(in srgb, var(--accent) 18%, var(--panel-2));
+      border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+      transition: transform 120ms ease, filter 140ms ease, border-color 140ms ease;
+    }
+
+    button:hover { filter: brightness(1.05); }
+    button:active { transform: translateY(1px); }
+
+    .tiny-btns {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .tiny-btns button { padding: 8px 10px; }
+
+    .flow-dial {
+      width: 100%;
+      min-height: 236px;
+      margin: 6px auto 0;
+      border-radius: 16px;
+      border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--accent) 15%, transparent), transparent 35%),
+        linear-gradient(90deg, color-mix(in srgb, var(--panel-2) 80%, transparent), color-mix(in srgb, var(--panel) 95%, transparent), color-mix(in srgb, var(--panel-2) 80%, transparent));
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 22%, transparent), 0 14px 34px color-mix(in srgb, #000 20%, transparent);
+    }
+
+    .flow-dial.dragging { cursor: grabbing; }
+
+    .wheel-label {
+      position: absolute;
+      left: 50%;
+      top: 8px;
+      transform: translateX(-50%);
+      font-size: 0.74rem;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      text-transform: none;
+      pointer-events: none;
+      z-index: 3;
+      font-weight: 600;
+    }
+
+    .flow-track {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .week-marker {
+      position: absolute;
+      bottom: 64px;
+      width: 2px;
+      height: 34px;
+      background: color-mix(in srgb, var(--muted) 62%, transparent);
+      transform: translateX(-50%);
+      border-radius: 20px;
+      transition: height 120ms ease, background 120ms ease;
+      pointer-events: none;
+    }
+
+    .week-marker.major {
+      height: 56px;
+      width: 3px;
+      background: color-mix(in srgb, var(--accent) 55%, transparent);
+    }
+
+    .week-marker.active {
+      height: 72px;
+      width: 4px;
+      background: color-mix(in srgb, var(--accent) 95%, #fff 8%);
+      box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 55%, transparent);
+    }
+
+    .marker-label {
+      position: absolute;
+      transform: translateX(-50%);
+      bottom: 40px;
+      font-size: 0.67rem;
+      color: var(--muted);
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+      pointer-events: none;
+    }
+
+    .focus-line {
+      position: absolute;
+      left: 50%;
+      top: 30px;
+      bottom: 24px;
+      width: 2px;
+      transform: translateX(-50%);
+      background: linear-gradient(to bottom, color-mix(in srgb, var(--accent) 85%, transparent), color-mix(in srgb, var(--accent) 55%, transparent));
+      box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .focus-chip {
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      min-width: min(90%, 260px);
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+      background: color-mix(in srgb, var(--panel) 92%, transparent);
+      text-align: center;
+      padding: 8px 10px;
+      z-index: 3;
+      box-shadow: 0 4px 20px color-mix(in srgb, #000 22%, transparent);
+    }
+
+    .offset { font-size: clamp(1.05rem, 2.4vw, 1.5rem); font-weight: 800; line-height: 1.1; }
+    .result-date { font-size: 0.82rem; color: var(--muted); }
+    .wheel-meta { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+
+    .slider-wrap { display: grid; gap: 8px; }
+    .week-slider { accent-color: var(--accent); }
+
+    .result {
+      border-radius: 10px;
+      padding: 12px;
+      background: color-mix(in srgb, var(--panel-2) 74%, transparent);
+      border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
+      white-space: pre-line;
+      min-height: 86px;
+    }
+
+    .viz-wrap {
+      margin-top: 2px;
+      border-radius: 14px;
+      border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+      background:
+        radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 45%),
+        linear-gradient(160deg, color-mix(in srgb, var(--panel) 95%, transparent), color-mix(in srgb, var(--panel-2) 88%, transparent));
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--muted) 20%, transparent), 0 14px 40px color-mix(in srgb, #000 18%, transparent);
+    }
+
+    .viz-header {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      padding: 8px 10px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      border-bottom: 1px solid color-mix(in srgb, var(--muted) 26%, transparent);
+      background: color-mix(in srgb, var(--panel) 65%, transparent);
+      text-transform: none;
+      letter-spacing: 0.01em;
+      font-weight: 600;
+    }
+
+    .viz-title {
+      align-self: center;
+      color: color-mix(in srgb, var(--text) 88%, var(--muted));
+      white-space: nowrap;
+    }
+
+    .viz-controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+      min-width: 0;
+    }
+
+    .viz-controls select,
+    .viz-controls button {
+      width: auto;
+      min-width: 0;
+      padding: 5px 9px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    #vizHeaderMeta {
+      white-space: nowrap;
+      font-size: 0.8rem;
+      color: color-mix(in srgb, var(--text) 88%, var(--muted));
+    }
+
+    .viz-legend {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 4px;
+      padding: 7px 8px;
+      border-bottom: 1px solid color-mix(in srgb, var(--muted) 24%, transparent);
+      background: color-mix(in srgb, var(--panel) 58%, transparent);
+    }
+
+    .month-swatch {
+      border-radius: 8px;
+      border: 1px solid color-mix(in srgb, var(--muted) 26%, transparent);
+      text-align: center;
+      padding: 4px 0;
+      font-size: 0.72rem;
+      color: color-mix(in srgb, var(--text) 94%, #fff 6%);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      user-select: none;
+    }
+
+    .viz-stage {
+      position: relative;
+      aspect-ratio: 1.35;
+      min-height: 230px;
+    }
+
+    .spiral-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .viz-tooltip {
+      position: relative;
+      left: 0;
+      top: 0;
+      max-width: none;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--panel) 97%, #000 3%);
+      border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+      font-size: 0.82rem;
+      color: color-mix(in srgb, var(--text) 96%, #fff 4%);
+      font-weight: 500;
+      pointer-events: none;
+      line-height: 1.42;
+      box-shadow: 0 6px 22px color-mix(in srgb, #000 22%, transparent);
+      opacity: 0.88;
+      transition: opacity 120ms ease;
+    }
+
+    .viz-tooltip.active {
+      opacity: 0.98;
+    }
+
+    .viz-help {
+      position: relative;
+      right: auto;
+      top: auto;
+      font-size: 0.76rem;
+      color: color-mix(in srgb, var(--text) 84%, var(--muted));
+      background: color-mix(in srgb, var(--panel) 90%, transparent);
+      border: 1px solid color-mix(in srgb, var(--muted) 24%, transparent);
+      border-radius: 8px;
+      padding: 5px 8px;
+      pointer-events: none;
+      opacity: 0.75;
+    }
+
+    .viz-info-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 8px;
+      border-top: 1px solid color-mix(in srgb, var(--muted) 24%, transparent);
+      background: color-mix(in srgb, var(--panel) 52%, transparent);
+    }
+
+    .viz-kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      padding: 8px;
+      border-top: 1px solid color-mix(in srgb, var(--muted) 26%, transparent);
+      background: color-mix(in srgb, var(--panel) 55%, transparent);
+    }
+
+    .viz-kpi {
+      border-radius: 9px;
+      border: 1px solid color-mix(in srgb, var(--muted) 24%, transparent);
+      padding: 6px;
+      text-align: center;
+      background: color-mix(in srgb, var(--panel-2) 72%, transparent);
+    }
+
+    .viz-kpi b {
+      display: block;
+      font-size: 1.05rem;
+      color: color-mix(in srgb, var(--brand-gold) 45%, var(--accent) 55%);
+      line-height: 1.2;
+    }
+
+    .viz-kpi span {
+      display: block;
+      font-size: 0.74rem;
+      color: var(--muted);
+      text-transform: none;
+      letter-spacing: 0.01em;
+      font-weight: 600;
+    }
+
+    .hc-mode .viz-wrap {
+      border-color: color-mix(in srgb, #ffffff 55%, var(--accent));
+      background:
+        linear-gradient(160deg, color-mix(in srgb, var(--panel) 98%, #000 2%), color-mix(in srgb, var(--panel-2) 95%, #000 5%));
+    }
+
+    .hc-mode .viz-tooltip,
+    .hc-mode .viz-help,
+    .hc-mode .viz-kpi,
+    .hc-mode .month-swatch {
+      border-color: color-mix(in srgb, #ffffff 50%, var(--accent));
+    }
+
+    .ok { color: var(--good); }
+    .err { color: var(--bad); }
+
+    .strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+      gap: 8px;
+    }
+
+    .week-chip {
+      border: 1px solid color-mix(in srgb, var(--muted) 35%, transparent);
+      border-radius: 10px;
+      padding: 8px;
+      background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+      cursor: pointer;
+      text-align: left;
+      color: var(--text);
+      transition: border-color 140ms ease, background 140ms ease, transform 110ms ease;
+    }
+
+    .week-chip:hover { transform: translateY(-1px); }
+
+    .week-chip.active {
+      border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+      background: color-mix(in srgb, var(--accent) 16%, var(--panel-2));
+    }
+
+    .week-chip div:first-child { font-weight: 700; }
+    .week-chip div:last-child { color: var(--muted); font-size: 0.82rem; }
+
+    .manual-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .small { color: var(--muted); font-size: 0.8rem; margin: 2px 0 0; }
+
+    .tight-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .mode-hint {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+
+    .preset-bar {
+      display: grid;
+      grid-template-columns: 62px 1fr auto auto;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .preset-bar label {
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    .preset-bar select,
+    .preset-bar button {
+      min-height: 34px;
+      padding: 6px 8px;
+      font-size: 0.78rem;
+      border-radius: 8px;
+    }
+
+    .preset-mini {
+      color: var(--muted);
+      font-size: 0.72rem;
+      margin-top: -2px;
+      margin-bottom: 2px;
+    }
+
+    @media (max-width: 760px) {
+      .wrap {
+        padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+      }
+
+      h1 {
+        font-size: 1.15rem;
+      }
+
+      .subtitle {
+        margin-bottom: 6px;
+      }
+
+      .tabs {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .tab-btn {
+        width: 100%;
+        min-height: 40px;
+      }
+
+      .card {
+        padding: 12px;
+        border-radius: 14px;
+      }
+
+      .row-inline {
+        grid-template-columns: 1fr;
+      }
+
+      .tiny-btns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .tiny-btns button {
+        min-height: 40px;
+      }
+
+      .viz-header {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .viz-title {
+        white-space: normal;
+      }
+
+      .viz-controls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        justify-content: stretch;
+      }
+
+      .viz-controls label {
+        font-size: 0.66rem;
+      }
+
+      .viz-controls select,
+      .viz-controls button,
+      #vizHeaderMeta {
+        width: 100%;
+      }
+
+      #vizHeaderMeta {
+        grid-column: 1 / -1;
+        text-transform: none;
+        letter-spacing: 0.01em;
+        font-size: 0.7rem;
+        white-space: normal;
+      }
+
+      .viz-legend {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+
+      .viz-stage {
+        min-height: 260px;
+      }
+
+      .viz-info-row {
+        grid-template-columns: 1fr;
+      }
+
+      input, select, button {
+        min-height: 42px;
+        font-size: 16px;
+      }
+
+      .week-chip {
+        min-height: 46px;
+      }
+
+      .mode-hint {
+        display: none;
+      }
+
+      .preset-bar {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .preset-bar label {
+        grid-column: 1 / -1;
+      }
+
+      .preset-bar select {
+        grid-column: 1 / -1;
+      }
+
+      .preset-bar button {
+        min-height: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="kicker"><span class="brand-dot">CPS</span>Power Systems • Quotes Forecasting</div>
+    <h1>Date Wheel Helper</h1>
+    <div class="subtitle">Estimate delivery dates quickly for quotes and customer commitments.</div>
+
+    <div class="tabs" role="tablist" aria-label="Modes">
+      <button class="tab-btn active" data-tab="wheel" role="tab" aria-selected="true">Date Wheel</button>
+      <button class="tab-btn" data-tab="manual" role="tab" aria-selected="false">Manual Mode</button>
+    </div>
+
+    <section id="wheel" class="tab-panel active" role="tabpanel">
+      <div class="wheel-layout">
+        <article class="card">
+          <div class="tight-heading">
+            <h2>Interactive Week Wheel</h2>
+            <span class="mode-hint">Drag • Scroll • Slide</span>
+          </div>
+
+          <div class="preset-bar">
+            <label for="quickPreset">Preset</label>
+            <select id="quickPreset" aria-label="Quick preset"></select>
+            <button id="applyPresetBtn" type="button">Apply</button>
+            <button id="savePresetBtn" type="button">Save</button>
+          </div>
+          <div id="presetMini" class="preset-mini">Built-ins + one saved custom preset.</div>
+
+          <div class="row">
+            <label for="wheelBaseDate">Base date</label>
+            <input id="wheelBaseDate" type="date" />
+          </div>
+
+          <div class="row row-inline">
+            <div>
+              <label for="wheelRound">Rounded weeks mode</label>
+              <select id="wheelRound">
+                <option value="nearest" selected>Nearest whole week</option>
+                <option value="down">Round down</option>
+                <option value="up">Round up</option>
+              </select>
+            </div>
+            <div>
+              <label for="wheelOffsetInput">Weeks (exact)</label>
+              <input id="wheelOffsetInput" type="number" min="0" step="0.25" value="0" />
+            </div>
+          </div>
+
+          <div id="dateWheel" class="flow-dial" aria-label="Drag week flow timeline">
+            <div class="wheel-label">Week Flow • drag left/right</div>
+            <div id="flowTrack" class="flow-track"></div>
+            <div class="focus-line"></div>
+            <div class="focus-chip">
+              <div id="wheelOffsetLabel" class="offset">+0 week</div>
+              <div id="wheelDateLabel" class="result-date"></div>
+              <div id="wheelMeta" class="wheel-meta"></div>
+            </div>
+          </div>
+
+          <div class="slider-wrap">
+            <label for="wheelSlider">Fine slide (0 to +260 weeks)</label>
+            <input id="wheelSlider" class="week-slider" type="range" min="0" max="260" step="0.25" value="0" />
+          </div>
+
+          <div class="tiny-btns">
+            <button data-jump="4">+4</button>
+            <button data-jump="12">+12</button>
+            <button data-jump="26">+26</button>
+            <button data-jump="52">+52</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <h2>Live Result</h2>
+          <div id="wheelResult" class="result"></div>
+
+          <div class="viz-wrap" aria-label="Spiral calendar visualization">
+            <div class="viz-header">
+              <span class="viz-title">Spiral Calendar Orbit</span>
+              <div class="viz-controls">
+                <label for="vizRange">Range</label>
+                <select id="vizRange" aria-label="Spiral range">
+                  <option value="52">1y</option>
+                  <option value="104" selected>2y</option>
+                  <option value="156">3y</option>
+                </select>
+                <label for="vizMode">View</label>
+                <select id="vizMode" aria-label="Visualization mode">
+                  <option value="spiral" selected>Spiral</option>
+                  <option value="unrolled">Unrolled</option>
+                </select>
+                <label for="vizTheme">Theme</label>
+                <select id="vizTheme" aria-label="Visualization accessibility theme">
+                  <option value="cps" selected>CPS</option>
+                  <option value="colorblind">Colorblind Safe</option>
+                  <option value="high_contrast">High Contrast</option>
+                </select>
+                <button id="vizAnimateBtn" type="button">Animate: Off</button>
+                <span id="vizHeaderMeta">focus +0w</span>
+              </div>
+            </div>
+            <div id="monthLegend" class="viz-legend"></div>
+            <div class="viz-stage">
+              <canvas id="spiralCanvas" class="spiral-canvas"></canvas>
+            </div>
+            <div class="viz-info-row">
+              <div id="spiralTooltip" class="viz-tooltip">Tap or hover any point</div>
+              <div class="viz-help">Tap points • Gold = year crossover</div>
+            </div>
+            <div class="viz-kpis">
+              <div class="viz-kpi"><b id="vizKpiWeek">0</b><span>Focus Week</span></div>
+              <div class="viz-kpi"><b id="vizKpiYear">0.0</b><span>Years Out</span></div>
+              <div class="viz-kpi"><b id="vizKpiDate">—</b><span>Focus Date</span></div>
+            </div>
+          </div>
+
+          <div class="row">
+            <label for="targetMonth">Snap wheel to month/year/day</label>
+            <div class="row-inline">
+              <select id="targetMonth"></select>
+              <input id="targetDay" type="number" min="1" max="31" value="1" aria-label="Target day" />
+            </div>
+            <div class="row-inline">
+              <input id="targetYear" type="number" min="1900" max="2500" step="1" />
+              <button id="snapBtn">Snap</button>
+            </div>
+            <p class="small">Calculates week offset from base date to the selected target date.</p>
+          </div>
+
+          <div>
+            <label>Upcoming weeks</label>
+            <div id="weekStrip" class="strip"></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="manual" class="tab-panel" role="tabpanel">
+      <section class="manual-grid">
+        <article class="card">
+          <h2>1) Weeks Between Dates</h2>
+          <div class="row">
+            <label for="betweenStart">Start date</label>
+            <input id="betweenStart" type="date" />
+          </div>
+          <div class="row">
+            <label for="betweenEnd">End date</label>
+            <input id="betweenEnd" type="date" />
+          </div>
+          <div class="row">
+            <label for="betweenRound">Rounded weeks mode</label>
+            <select id="betweenRound">
+              <option value="nearest" selected>Nearest whole week</option>
+              <option value="down">Round down</option>
+              <option value="up">Round up</option>
+            </select>
+          </div>
+          <button id="betweenBtn">Calculate</button>
+          <div id="betweenResult" class="result">Enter two dates to calculate.</div>
+        </article>
+
+        <article class="card">
+          <h2>2) Weeks Until Month/Year</h2>
+          <div class="row">
+            <label for="untilStart">Start date</label>
+            <input id="untilStart" type="date" />
+          </div>
+          <div class="row">
+            <label for="untilMonth">Target month</label>
+            <select id="untilMonth"></select>
+          </div>
+          <div class="row">
+            <label for="untilYear">Target year</label>
+            <input id="untilYear" type="number" min="1900" max="2500" step="1" />
+          </div>
+          <div class="row">
+            <label for="untilDay">Target day (default 1)</label>
+            <input id="untilDay" type="number" min="1" max="31" step="1" value="1" />
+          </div>
+          <div class="row">
+            <label for="untilRound">Rounded weeks mode</label>
+            <select id="untilRound">
+              <option value="nearest" selected>Nearest whole week</option>
+              <option value="down">Round down</option>
+              <option value="up">Round up</option>
+            </select>
+          </div>
+          <button id="untilBtn">Calculate</button>
+          <div id="untilResult" class="result">Choose a month, year, and day to calculate.</div>
+        </article>
+
+        <article class="card">
+          <h2>3) Add/Subtract Weeks</h2>
+          <div class="row">
+            <label for="shiftStart">Base date</label>
+            <input id="shiftStart" type="date" />
+          </div>
+          <div class="row">
+            <label for="shiftWeeks">Weeks to add</label>
+            <input id="shiftWeeks" type="number" min="0" step="0.01" value="0" />
+          </div>
+          <button id="shiftBtn">Calculate</button>
+          <div id="shiftResult" class="result">Enter a date and week value to calculate.</div>
+        </article>
+      </section>
+    </section>
+
+    <p class="small">Standalone file. Open directly in browser. Calculations use calendar days; 1 week = 7 days.</p>
+  </main>
+
+  <script>
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    const tabButtons = Array.from(document.querySelectorAll(".tab-btn"));
+    const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
+
+    const wheelBaseDate = document.getElementById("wheelBaseDate");
+    const wheelRound = document.getElementById("wheelRound");
+    const wheelOffsetInput = document.getElementById("wheelOffsetInput");
+    const wheelSlider = document.getElementById("wheelSlider");
+    const wheelResult = document.getElementById("wheelResult");
+    const wheelOffsetLabel = document.getElementById("wheelOffsetLabel");
+    const wheelDateLabel = document.getElementById("wheelDateLabel");
+    const wheelMeta = document.getElementById("wheelMeta");
+    const quickPreset = document.getElementById("quickPreset");
+    const applyPresetBtn = document.getElementById("applyPresetBtn");
+    const savePresetBtn = document.getElementById("savePresetBtn");
+    const presetMini = document.getElementById("presetMini");
+    const dateWheel = document.getElementById("dateWheel");
+    const flowTrack = document.getElementById("flowTrack");
+    const weekStrip = document.getElementById("weekStrip");
+    const spiralCanvas = document.getElementById("spiralCanvas");
+    const spiralTooltip = document.getElementById("spiralTooltip");
+    const vizHelp = document.querySelector(".viz-help");
+    const monthLegend = document.getElementById("monthLegend");
+    const vizRange = document.getElementById("vizRange");
+    const vizMode = document.getElementById("vizMode");
+    const vizTheme = document.getElementById("vizTheme");
+    const vizAnimateBtn = document.getElementById("vizAnimateBtn");
+    const vizHeaderMeta = document.getElementById("vizHeaderMeta");
+    const vizKpiWeek = document.getElementById("vizKpiWeek");
+    const vizKpiYear = document.getElementById("vizKpiYear");
+    const vizKpiDate = document.getElementById("vizKpiDate");
+    const targetMonth = document.getElementById("targetMonth");
+    const targetYear = document.getElementById("targetYear");
+    const targetDay = document.getElementById("targetDay");
+    const snapBtn = document.getElementById("snapBtn");
+
+    const betweenStart = document.getElementById("betweenStart");
+    const betweenEnd = document.getElementById("betweenEnd");
+    const betweenRound = document.getElementById("betweenRound");
+    const betweenBtn = document.getElementById("betweenBtn");
+    const betweenResult = document.getElementById("betweenResult");
+
+    const untilStart = document.getElementById("untilStart");
+    const untilMonth = document.getElementById("untilMonth");
+    const untilYear = document.getElementById("untilYear");
+    const untilDay = document.getElementById("untilDay");
+    const untilRound = document.getElementById("untilRound");
+    const untilBtn = document.getElementById("untilBtn");
+    const untilResult = document.getElementById("untilResult");
+
+    const shiftStart = document.getElementById("shiftStart");
+    const shiftWeeks = document.getElementById("shiftWeeks");
+    const shiftBtn = document.getElementById("shiftBtn");
+    const shiftResult = document.getElementById("shiftResult");
+
+    const PIXELS_PER_WEEK = 24;
+
+    const wheelState = {
+      offsetWeeks: 0,
+      dragging: false,
+      dragStartX: 0,
+      dragStartOffset: 0,
+      renderPending: false,
+      hoveredWeek: null,
+      spiralPoints: [],
+      snapNote: ""
+    };
+
+    let spiralAnimationHandle = null;
+
+    const spiralState = {
+      animate: false,
+      phase: 0,
+      rangeWeeks: 104,
+      mode: "spiral",
+      theme: "cps",
+      stars: [],
+      starsSeed: ""
+    };
+
+    const BUILT_IN_PRESETS = [
+      { id: "quick_quote", label: "Quick Quote (26w)", state: { offsetWeeks: 26, round: "nearest", vizMode: "unrolled", vizRange: "52", animate: false } },
+      { id: "standard_lead", label: "Standard Lead (52w)", state: { offsetWeeks: 52, round: "nearest", vizMode: "unrolled", vizRange: "104", animate: false } },
+      { id: "long_lead", label: "Long Lead (78w)", state: { offsetWeeks: 78, round: "up", vizMode: "spiral", vizRange: "156", animate: false } }
+    ];
+
+    const STORAGE_KEYS = {
+      lastState: "cps_date_tool_last_state_v1",
+      userPreset: "cps_date_tool_user_preset_v1"
+    };
+
+    function todayISO() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function parseDate(dateString) {
+      if (!dateString) {
+        return null;
+      }
+      const date = new Date(`${dateString}T00:00:00`);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function formatDate(date) {
+      return date.toLocaleDateString(undefined, {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
+    }
+
+    function diffDays(a, b) {
+      const msPerDay = 24 * 60 * 60 * 1000;
+      return Math.round((b.getTime() - a.getTime()) / msPerDay);
+    }
+
+    function roundWeeks(value, mode) {
+      if (mode === "down") return Math.floor(value);
+      if (mode === "up") return Math.ceil(value);
+      return Math.round(value);
+    }
+
+    function maxDayInMonth(year, monthIndex) {
+      return new Date(year, monthIndex + 1, 0).getDate();
+    }
+
+    function setResult(element, text, isError) {
+      element.textContent = text;
+      element.classList.remove("ok", "err");
+      element.classList.add(isError ? "err" : "ok");
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function formatMonthDay(date) {
+      return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    function hexToRgba(hex, alpha) {
+      const normalized = hex.replace("#", "");
+      const value = normalized.length === 3
+        ? normalized.split("").map((c) => `${c}${c}`).join("")
+        : normalized;
+      const r = Number.parseInt(value.slice(0, 2), 16);
+      const g = Number.parseInt(value.slice(2, 4), 16);
+      const b = Number.parseInt(value.slice(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function monthColor(monthIndex, alpha) {
+      const theme = spiralState.theme;
+      if (theme === "high_contrast") {
+        const high = [
+          "#ffffff", "#ffd166", "#06d6a0", "#118ab2", "#ef476f", "#f8f9fa",
+          "#ffb703", "#8ecae6", "#fb8500", "#219ebc", "#ff006e", "#caffbf"
+        ];
+        const rgb = high[monthIndex % high.length];
+        return hexToRgba(rgb, alpha);
+      }
+      if (theme === "colorblind") {
+        const safe = [
+          "#56b4e9", "#009e73", "#e69f00", "#0072b2", "#d55e00", "#cc79a7",
+          "#f0e442", "#009e73", "#56b4e9", "#e69f00", "#0072b2", "#d55e00"
+        ];
+        const rgb = safe[monthIndex % safe.length];
+        return hexToRgba(rgb, alpha);
+      }
+      const hue = (monthIndex * 30) % 360;
+      return `hsla(${hue} 85% 68% / ${alpha})`;
+    }
+
+    function shortMonth(monthIndex) {
+      return months[monthIndex].slice(0, 3);
+    }
+
+    function safeStorageGet(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    }
+
+    function safeStorageSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+      }
+    }
+
+    function currentPresetState() {
+      return {
+        offsetWeeks: clampOffset(Number(wheelOffsetInput.value) || wheelState.offsetWeeks),
+        round: wheelRound.value,
+        vizMode: vizMode.value,
+        vizRange: vizRange.value,
+        animate: spiralState.animate
+      };
+    }
+
+    function applyPresetState(state, note) {
+      if (!state) return;
+      wheelState.offsetWeeks = clampOffset(Number(state.offsetWeeks) || 0);
+      wheelRound.value = state.round || "nearest";
+      vizMode.value = state.vizMode || "unrolled";
+      vizRange.value = state.vizRange || "52";
+      spiralState.animate = Boolean(state.animate);
+      vizAnimateBtn.textContent = `Animate: ${spiralState.animate ? "On" : "Off"}`;
+      wheelState.snapNote = "";
+      updateVizMode();
+      updateSpiralRange();
+      syncWheelInputs();
+      renderWheelResult();
+      if (note) {
+        presetMini.textContent = note;
+      }
+      startSpiralAnimation();
+    }
+
+    function refreshPresetOptions() {
+      quickPreset.innerHTML = "";
+      for (const preset of BUILT_IN_PRESETS) {
+        const option = document.createElement("option");
+        option.value = preset.id;
+        option.textContent = preset.label;
+        quickPreset.appendChild(option);
+      }
+
+      const saved = safeStorageGet(STORAGE_KEYS.userPreset);
+      if (saved) {
+        const option = document.createElement("option");
+        option.value = "my_saved";
+        option.textContent = "My Saved Preset";
+        quickPreset.appendChild(option);
+      }
+    }
+
+    function saveLastState() {
+      safeStorageSet(STORAGE_KEYS.lastState, JSON.stringify(currentPresetState()));
+    }
+
+    function loadLastStateIfAny() {
+      const raw = safeStorageGet(STORAGE_KEYS.lastState);
+      if (!raw) return false;
+      try {
+        const state = JSON.parse(raw);
+        applyPresetState(state, "Restored last used settings");
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function applySelectedPreset() {
+      const selected = quickPreset.value;
+      if (selected === "my_saved") {
+        const raw = safeStorageGet(STORAGE_KEYS.userPreset);
+        if (!raw) {
+          presetMini.textContent = "No saved custom preset yet.";
+          return;
+        }
+        try {
+          applyPresetState(JSON.parse(raw), "Applied My Saved Preset");
+          saveLastState();
+        } catch {
+          presetMini.textContent = "Saved preset was invalid.";
+        }
+        return;
+      }
+
+      const preset = BUILT_IN_PRESETS.find((item) => item.id === selected);
+      if (!preset) return;
+      applyPresetState(preset.state, `Applied ${preset.label}`);
+      saveLastState();
+    }
+
+    function saveCurrentAsUserPreset() {
+      safeStorageSet(STORAGE_KEYS.userPreset, JSON.stringify(currentPresetState()));
+      refreshPresetOptions();
+      quickPreset.value = "my_saved";
+      presetMini.textContent = "Saved current settings as My Saved Preset";
+      saveLastState();
+    }
+
+    function renderMonthLegend() {
+      monthLegend.innerHTML = "";
+      for (let month = 0; month < 12; month += 1) {
+        const swatch = document.createElement("div");
+        swatch.className = "month-swatch";
+        swatch.textContent = shortMonth(month);
+        swatch.style.background = monthColor(month, 0.5);
+        swatch.style.color = spiralState.theme === "high_contrast" ? "#0b0f14" : "";
+        swatch.title = months[month];
+        monthLegend.appendChild(swatch);
+      }
+    }
+
+    function applyVizTheme() {
+      document.body.classList.toggle("hc-mode", spiralState.theme === "high_contrast");
+      renderMonthLegend();
+      const baseDate = parseDate(wheelBaseDate.value);
+      if (baseDate) drawCurrentVisualization(baseDate);
+      safeStorageSet("cps_date_tool_viz_theme_v1", spiralState.theme);
+    }
+
+    function drawTextWithOutline(ctx, text, x, y) {
+      ctx.save();
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = "rgba(7,16,26,0.35)";
+      ctx.strokeText(text, x, y);
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function setCanvasFont(ctx, sizePx, dpr, weight = 500) {
+      const px = Math.max(9, Math.round(sizePx * dpr));
+      ctx.font = `${weight} ${px}px "Segoe UI", "SF Pro Text", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif`;
+    }
+
+    function setTabs(nextId) {
+      tabButtons.forEach((btn) => {
+        const active = btn.dataset.tab === nextId;
+        btn.classList.toggle("active", active);
+        btn.setAttribute("aria-selected", String(active));
+      });
+      tabPanels.forEach((panel) => panel.classList.toggle("active", panel.id === nextId));
+    }
+
+    function setMonthOptions() {
+      months.forEach((monthName, index) => {
+        const opt1 = document.createElement("option");
+        opt1.value = String(index);
+        opt1.textContent = monthName;
+        untilMonth.appendChild(opt1);
+
+        const opt2 = document.createElement("option");
+        opt2.value = String(index);
+        opt2.textContent = monthName;
+        targetMonth.appendChild(opt2);
+      });
+    }
+
+    function syncUntilDayMax() {
+      const year = Number(untilYear.value);
+      const monthIndex = Number(untilMonth.value);
+      if (!year || Number.isNaN(monthIndex)) return;
+      const max = maxDayInMonth(year, monthIndex);
+      untilDay.max = String(max);
+      if (Number(untilDay.value) > max) untilDay.value = String(max);
+    }
+
+    function syncTargetDayMax() {
+      const year = Number(targetYear.value);
+      const monthIndex = Number(targetMonth.value);
+      if (!year || Number.isNaN(monthIndex)) return;
+      const max = maxDayInMonth(year, monthIndex);
+      targetDay.max = String(max);
+      if (Number(targetDay.value) > max) targetDay.value = String(max);
+    }
+
+    function clampOffset(v) {
+      return Math.max(0, Math.min(260, v));
+    }
+
+    function prettyWeek(value) {
+      const rounded = Math.round(value);
+      if (Math.abs(value - rounded) < 0.005) {
+        return String(rounded);
+      }
+      return value.toFixed(2);
+    }
+
+    function renderWeekStrip(baseDate, offsetWeeks) {
+      const activeOffset = roundWeeks(offsetWeeks, wheelRound.value);
+      weekStrip.innerHTML = "";
+      for (let i = 0; i <= 6; i += 1) {
+        const chipOffset = activeOffset + i;
+        const date = addDays(baseDate, chipOffset * 7);
+        const chip = document.createElement("button");
+        chip.className = `week-chip ${i === 0 ? "active" : ""}`;
+        chip.type = "button";
+        chip.innerHTML = `<div>${chipOffset >= 0 ? "+" : ""}${chipOffset}w</div><div>${formatMonthDay(date)}</div>`;
+        chip.addEventListener("click", () => {
+          wheelState.offsetWeeks = clampOffset(chipOffset);
+          syncWheelInputs();
+          renderWheelResult();
+        });
+        weekStrip.appendChild(chip);
+      }
+    }
+
+    function renderFlowTrack(baseDate) {
+      const width = dateWheel.clientWidth || 320;
+      const half = width / 2;
+      const startWeek = Math.max(0, Math.floor(wheelState.offsetWeeks) - 20);
+      const endWeek = Math.floor(wheelState.offsetWeeks) + 20;
+      const activeWeek = roundWeeks(wheelState.offsetWeeks, wheelRound.value);
+
+      flowTrack.innerHTML = "";
+
+      for (let week = startWeek; week <= endWeek; week += 1) {
+        const x = half + ((week - wheelState.offsetWeeks) * PIXELS_PER_WEEK);
+        const marker = document.createElement("div");
+        marker.className = "week-marker";
+        if (week % 4 === 0) marker.classList.add("major");
+        if (week === activeWeek) marker.classList.add("active");
+        marker.style.left = `${x}px`;
+        flowTrack.appendChild(marker);
+
+        if (week % 4 === 0 || week === activeWeek) {
+          const labelDate = addDays(baseDate, week * 7);
+          const label = document.createElement("div");
+          label.className = "marker-label";
+          label.style.left = `${x}px`;
+          label.textContent = formatMonthDay(labelDate);
+          flowTrack.appendChild(label);
+        }
+      }
+    }
+
+    function queueWheelRender() {
+      if (wheelState.renderPending) return;
+      wheelState.renderPending = true;
+      requestAnimationFrame(() => {
+        wheelState.renderPending = false;
+        renderWheelResult();
+      });
+    }
+
+    function fitSpiralCanvas() {
+      const rect = spiralCanvas.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const width = Math.max(220, Math.floor(rect.width * dpr));
+      const height = Math.max(180, Math.floor(rect.height * dpr));
+      if (spiralCanvas.width !== width || spiralCanvas.height !== height) {
+        spiralCanvas.width = width;
+        spiralCanvas.height = height;
+      }
+      return { width, height, dpr };
+    }
+
+    function ensureSpiralStars() {
+      const rect = spiralCanvas.getBoundingClientRect();
+      const key = `${Math.round(rect.width)}x${Math.round(rect.height)}`;
+      if (spiralState.starsSeed === key && spiralState.stars.length) {
+        return;
+      }
+      spiralState.starsSeed = key;
+      const count = 90;
+      const stars = [];
+      let seed = 1337;
+      function rand() {
+        seed = (seed * 1664525 + 1013904223) % 4294967296;
+        return seed / 4294967296;
+      }
+      for (let i = 0; i < count; i += 1) {
+        stars.push({
+          x: rand(),
+          y: rand(),
+          s: 0.4 + (rand() * 1.8),
+          a: 0.18 + (rand() * 0.42)
+        });
+      }
+      spiralState.stars = stars;
+    }
+
+    function spiralPoint(week, rangeWeeks, centerX, centerY, maxRadius, phase) {
+      const turns = 3.7;
+      const t = week / rangeWeeks;
+      const angle = (-Math.PI / 2) + (t * turns * Math.PI * 2) + (phase * 0.2);
+      const radius = 18 + (t * maxRadius * 0.94);
+      const depth = 0.84 + (0.16 * Math.sin((t * 9.5) + phase));
+      return {
+        x: centerX + (Math.cos(angle) * radius),
+        y: centerY + (Math.sin(angle) * radius * 0.86),
+        radius,
+        angle,
+        depth
+      };
+    }
+
+    function drawSpiralVisualization(baseDate) {
+      if (!baseDate) return;
+      const { width, height, dpr } = fitSpiralCanvas();
+      const ctx = spiralCanvas.getContext("2d");
+      if (!ctx) return;
+
+      const timePulse = spiralState.phase;
+      const rangeWeeks = spiralState.rangeWeeks;
+      const centerX = width * 0.52;
+      const centerY = height * 0.53;
+      const maxRadius = Math.min(width, height) * 0.43;
+      const activeWeek = roundWeeks(wheelState.offsetWeeks, wheelRound.value);
+      const displayWeek = Math.min(activeWeek, rangeWeeks);
+      const hoverWeek = wheelState.hoveredWeek;
+
+      ensureSpiralStars();
+
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = 0; i < spiralState.stars.length; i += 1) {
+        const star = spiralState.stars[i];
+        const twinkle = spiralState.animate ? (0.15 * Math.sin((i * 0.47) + (timePulse * 2))) : 0;
+        ctx.beginPath();
+        ctx.arc(star.x * width, star.y * height, star.s * dpr, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(203,213,225,${Math.max(0.08, star.a + twinkle)})`;
+        ctx.fill();
+      }
+
+      const bg = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, maxRadius * 1.08);
+      bg.addColorStop(0, "rgba(34,211,238,0.10)");
+      bg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, width, height);
+
+      wheelState.spiralPoints = [];
+      const monthStarts = [];
+      const yearCrossings = [];
+      let prevDate = null;
+
+      ctx.beginPath();
+      for (let week = 0; week <= rangeWeeks; week += 1) {
+        const point = spiralPoint(week, rangeWeeks, centerX, centerY, maxRadius, timePulse);
+        if (week === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      }
+      ctx.lineWidth = Math.max(1.2, dpr * 1.1);
+      ctx.strokeStyle = "rgba(148,163,184,0.22)";
+      ctx.stroke();
+
+      if (displayWeek > 0) {
+        const trail = ctx.createLinearGradient(centerX, centerY, width * 0.92, 18 * dpr);
+        trail.addColorStop(0, "rgba(34,211,238,0.18)");
+        trail.addColorStop(0.4, "rgba(34,211,238,0.55)");
+        trail.addColorStop(1, "rgba(242,181,68,0.38)");
+
+        const trailGlow = ctx.createLinearGradient(centerX, centerY, width * 0.92, 18 * dpr);
+        trailGlow.addColorStop(0, "rgba(34,211,238,0.18)");
+        trailGlow.addColorStop(0.7, "rgba(34,211,238,0.28)");
+        trailGlow.addColorStop(1, "rgba(242,181,68,0.22)");
+
+        ctx.beginPath();
+        for (let week = 0; week <= displayWeek; week += 1) {
+          const point = spiralPoint(week, rangeWeeks, centerX, centerY, maxRadius, timePulse);
+          if (week === 0) ctx.moveTo(point.x, point.y);
+          else ctx.lineTo(point.x, point.y);
+        }
+        ctx.strokeStyle = trailGlow;
+        ctx.lineWidth = 9.5 * dpr;
+        ctx.lineCap = "round";
+        ctx.shadowBlur = 20 * dpr;
+        ctx.shadowColor = "rgba(34,211,238,0.42)";
+        ctx.stroke();
+
+        ctx.beginPath();
+        for (let week = 0; week <= displayWeek; week += 1) {
+          const point = spiralPoint(week, rangeWeeks, centerX, centerY, maxRadius, timePulse);
+          if (week === 0) ctx.moveTo(point.x, point.y);
+          else ctx.lineTo(point.x, point.y);
+        }
+        ctx.strokeStyle = trail;
+        ctx.lineWidth = 4.8 * dpr;
+        ctx.lineCap = "round";
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+      }
+
+      for (let week = 0; week <= rangeWeeks; week += 1) {
+        const point = spiralPoint(week, rangeWeeks, centerX, centerY, maxRadius, timePulse);
+        const isMajor = week % 4 === 0;
+        const isQuarter = week % 13 === 0;
+        const isActive = week === activeWeek;
+        const isHover = hoverWeek === week;
+        const date = addDays(baseDate, week * 7);
+        const monthIndex = date.getMonth();
+        const isMonthStart = prevDate && monthIndex !== prevDate.getMonth();
+        const isYearCross = prevDate && date.getFullYear() !== prevDate.getFullYear();
+
+        let size = isQuarter ? 3.7 : (isMajor ? 2.9 : 2.1);
+        if (isMonthStart) size += 0.9;
+        if (isActive) size = 6.4;
+        else if (isHover) size = 5.4;
+        size *= point.depth;
+
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, size * dpr, 0, Math.PI * 2);
+
+        if (isActive) {
+          ctx.fillStyle = "rgba(34,211,238,0.95)";
+          ctx.shadowBlur = 18 * dpr;
+          ctx.shadowColor = "rgba(34,211,238,0.85)";
+        } else if (isHover) {
+          ctx.fillStyle = "rgba(16,185,129,0.95)";
+          ctx.shadowBlur = 14 * dpr;
+          ctx.shadowColor = "rgba(16,185,129,0.75)";
+        } else {
+          if (isQuarter) {
+            ctx.fillStyle = monthColor(monthIndex, 0.88);
+          } else if (isMajor) {
+            ctx.fillStyle = monthColor(monthIndex, 0.68);
+          } else {
+            ctx.fillStyle = monthColor(monthIndex, 0.48);
+          }
+          ctx.shadowBlur = 0;
+        }
+        ctx.fill();
+
+        wheelState.spiralPoints.push({
+          week,
+          x: point.x,
+          y: point.y,
+          r: Math.max(14, size * 5.2 * dpr),
+          date
+        });
+
+        if (isMonthStart) {
+          monthStarts.push({ week, point, date });
+        }
+        if (isYearCross) {
+          yearCrossings.push({ week, point, date });
+        }
+
+        if (isQuarter) {
+          ctx.fillStyle = "rgba(235,245,255,0.95)";
+          setCanvasFont(ctx, 11, dpr, 600);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+          drawTextWithOutline(ctx, `+${week}w`, point.x, point.y - (6 * dpr));
+        }
+
+        prevDate = date;
+      }
+
+      for (const item of monthStarts) {
+        const p = item.point;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5.8 * dpr, 0, Math.PI * 2);
+        ctx.strokeStyle = monthColor(item.date.getMonth(), 0.95);
+        ctx.lineWidth = 1.4 * dpr;
+        ctx.stroke();
+
+        if (item.date.getMonth() % 3 === 0 || item.week === displayWeek) {
+          ctx.fillStyle = monthColor(item.date.getMonth(), 0.95);
+          setCanvasFont(ctx, 11, dpr, 600);
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          drawTextWithOutline(ctx, shortMonth(item.date.getMonth()), p.x + (8 * dpr), p.y - (8 * dpr));
+        }
+      }
+
+      for (const item of yearCrossings) {
+        const p = item.point;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 12 * dpr, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(250,204,21,0.40)";
+        ctx.lineWidth = 2 * dpr;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 16 * dpr, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(250,204,21,0.22)";
+        ctx.lineWidth = 1.4 * dpr;
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(250,204,21,0.95)";
+        setCanvasFont(ctx, 12, dpr, 700);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        drawTextWithOutline(ctx, String(item.date.getFullYear()), p.x, p.y - (14 * dpr));
+      }
+
+      const activePoint = spiralPoint(displayWeek, rangeWeeks, centerX, centerY, maxRadius, timePulse);
+      ctx.beginPath();
+      ctx.arc(activePoint.x, activePoint.y, 10 * dpr, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(34,211,238,0.34)";
+      ctx.lineWidth = 2.4 * dpr;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(activePoint.x, activePoint.y, (14 + (spiralState.animate ? (Math.sin(timePulse * 2) * 2) : 0)) * dpr, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(34,211,238,0.16)";
+      ctx.lineWidth = 1.6 * dpr;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(activePoint.x, activePoint.y);
+      ctx.lineTo(width - (14 * dpr), 20 * dpr);
+      ctx.strokeStyle = "rgba(34,211,238,0.34)";
+      ctx.lineWidth = 1.2 * dpr;
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(229,231,235,0.88)";
+      setCanvasFont(ctx, 12, dpr, 650);
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      drawTextWithOutline(ctx, `+${activeWeek}w`, width - (18 * dpr), 18 * dpr);
+      drawTextWithOutline(ctx, formatMonthDay(addDays(baseDate, activeWeek * 7)), width - (18 * dpr), 36 * dpr);
+
+      const focusDate = addDays(baseDate, activeWeek * 7);
+      vizHeaderMeta.textContent = `focus +${activeWeek}w • ${shortMonth(focusDate.getMonth())} ${focusDate.getFullYear()}${activeWeek > rangeWeeks ? " (out of view)" : ""}`;
+      vizKpiWeek.textContent = `+${activeWeek}`;
+      vizKpiYear.textContent = `${(activeWeek / 52).toFixed(1)}`;
+      vizKpiDate.textContent = formatMonthDay(focusDate);
+    }
+
+    function drawUnrolledVisualization(baseDate) {
+      if (!baseDate) return;
+      const { width, height, dpr } = fitSpiralCanvas();
+      const ctx = spiralCanvas.getContext("2d");
+      if (!ctx) return;
+
+      const timePulse = spiralState.phase;
+      const rangeWeeks = spiralState.rangeWeeks;
+      const activeWeek = roundWeeks(wheelState.offsetWeeks, wheelRound.value);
+      const displayWeek = Math.min(activeWeek, rangeWeeks);
+      const hoverWeek = wheelState.hoveredWeek;
+
+      ctx.clearRect(0, 0, width, height);
+
+      const padX = 34 * dpr;
+      const padTop = 16 * dpr;
+      const padBottom = 34 * dpr;
+      const plotW = Math.max(10, width - (padX * 2));
+      const rowH = Math.max(10, (height - padTop - padBottom) / 12);
+
+      wheelState.spiralPoints = [];
+
+      for (let m = 0; m < 12; m += 1) {
+        const y = padTop + (m * rowH);
+        ctx.fillStyle = monthColor(m, 0.17);
+        ctx.fillRect(padX, y, plotW, rowH - 1);
+        ctx.fillStyle = "rgba(203,213,225,0.62)";
+        setCanvasFont(ctx, 11, dpr, 600);
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        drawTextWithOutline(ctx, shortMonth(m), 7 * dpr, y + (rowH * 0.5));
+      }
+
+      let prevYear = baseDate.getFullYear();
+      for (let week = 0; week <= rangeWeeks; week += 1) {
+        const date = addDays(baseDate, week * 7);
+        const month = date.getMonth();
+        const x = padX + ((week / rangeWeeks) * plotW);
+        const y = padTop + (month * rowH) + (rowH * 0.5);
+        const isMajor = week % 4 === 0;
+        const isQuarter = week % 13 === 0;
+        const isActive = week === activeWeek;
+        const isHover = week === hoverWeek;
+
+        let size = isQuarter ? 3.6 : (isMajor ? 2.7 : 2.0);
+        if (isActive) size = 6.1;
+        if (isHover) size = Math.max(size, 5.0);
+
+        ctx.beginPath();
+        ctx.arc(x, y, size * dpr, 0, Math.PI * 2);
+        if (isActive) {
+          ctx.fillStyle = "rgba(34,211,238,0.95)";
+          ctx.shadowBlur = 18 * dpr;
+          ctx.shadowColor = "rgba(34,211,238,0.8)";
+        } else if (isHover) {
+          ctx.fillStyle = "rgba(16,185,129,0.95)";
+          ctx.shadowBlur = 14 * dpr;
+          ctx.shadowColor = "rgba(16,185,129,0.8)";
+        } else {
+          ctx.fillStyle = monthColor(month, isQuarter ? 0.95 : 0.72);
+          ctx.shadowBlur = 0;
+        }
+        ctx.fill();
+
+        wheelState.spiralPoints.push({ week, x, y, r: Math.max(14, size * 5.4 * dpr), date });
+
+        if (week > 0 && date.getFullYear() !== prevYear) {
+          ctx.beginPath();
+          ctx.moveTo(x, padTop);
+          ctx.lineTo(x, height - padBottom);
+          ctx.strokeStyle = "rgba(250,204,21,0.58)";
+          ctx.lineWidth = 1.8 * dpr;
+          ctx.stroke();
+
+          ctx.fillStyle = "rgba(250,204,21,0.95)";
+          setCanvasFont(ctx, 12, dpr, 700);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          drawTextWithOutline(ctx, String(date.getFullYear()), x, 4 * dpr);
+          prevYear = date.getFullYear();
+        }
+      }
+
+      if (displayWeek > 0) {
+        const progressGlow = ctx.createLinearGradient(padX, padTop, padX + plotW, height - padBottom);
+        progressGlow.addColorStop(0, "rgba(34,211,238,0.16)");
+        progressGlow.addColorStop(0.7, "rgba(34,211,238,0.26)");
+        progressGlow.addColorStop(1, "rgba(242,181,68,0.20)");
+
+        const progressCore = ctx.createLinearGradient(padX, padTop, padX + plotW, height - padBottom);
+        progressCore.addColorStop(0, "rgba(34,211,238,0.50)");
+        progressCore.addColorStop(1, "rgba(242,181,68,0.42)");
+
+        ctx.beginPath();
+        for (let week = 0; week <= displayWeek; week += 1) {
+          const date = addDays(baseDate, week * 7);
+          const month = date.getMonth();
+          const xw = padX + ((week / rangeWeeks) * plotW);
+          const yw = padTop + (month * rowH) + (rowH * 0.5);
+          if (week === 0) ctx.moveTo(xw, yw);
+          else ctx.lineTo(xw, yw);
+        }
+        ctx.strokeStyle = progressGlow;
+        ctx.lineWidth = 9 * dpr;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.shadowBlur = 16 * dpr;
+        ctx.shadowColor = "rgba(34,211,238,0.35)";
+        ctx.stroke();
+
+        ctx.beginPath();
+        for (let week = 0; week <= displayWeek; week += 1) {
+          const date = addDays(baseDate, week * 7);
+          const month = date.getMonth();
+          const xw = padX + ((week / rangeWeeks) * plotW);
+          const yw = padTop + (month * rowH) + (rowH * 0.5);
+          if (week === 0) ctx.moveTo(xw, yw);
+          else ctx.lineTo(xw, yw);
+        }
+        ctx.strokeStyle = progressCore;
+        ctx.lineWidth = 4.2 * dpr;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+
+        const x = padX + ((displayWeek / rangeWeeks) * plotW);
+        const pulse = spiralState.animate ? (Math.sin(timePulse * 2) * 2.2) : 0;
+        ctx.beginPath();
+        ctx.moveTo(x, padTop);
+        ctx.lineTo(x, height - padBottom);
+        ctx.strokeStyle = "rgba(34,211,238,0.56)";
+        ctx.lineWidth = (2.8 + pulse) * dpr;
+        ctx.stroke();
+      }
+
+      const focusDate = addDays(baseDate, activeWeek * 7);
+      vizHeaderMeta.textContent = `focus +${activeWeek}w • ${shortMonth(focusDate.getMonth())} ${focusDate.getFullYear()}${activeWeek > rangeWeeks ? " (out of view)" : ""}`;
+      vizKpiWeek.textContent = `+${activeWeek}`;
+      vizKpiYear.textContent = `${(activeWeek / 52).toFixed(1)}`;
+      vizKpiDate.textContent = formatMonthDay(focusDate);
+    }
+
+    function drawCurrentVisualization(baseDate) {
+      if (spiralState.mode === "unrolled") {
+        drawUnrolledVisualization(baseDate);
+      } else {
+        drawSpiralVisualization(baseDate);
+      }
+    }
+
+    function startSpiralAnimation() {
+      if (spiralAnimationHandle) {
+        cancelAnimationFrame(spiralAnimationHandle);
+      }
+      if (!spiralState.animate) {
+        spiralAnimationHandle = null;
+        const baseDate = parseDate(wheelBaseDate.value);
+        if (baseDate) drawCurrentVisualization(baseDate);
+        return;
+      }
+      const loop = () => {
+        const baseDate = parseDate(wheelBaseDate.value);
+        if (baseDate && document.getElementById("wheel").classList.contains("active")) {
+          spiralState.phase += 0.012;
+          drawCurrentVisualization(baseDate);
+        }
+        spiralAnimationHandle = requestAnimationFrame(loop);
+      };
+      spiralAnimationHandle = requestAnimationFrame(loop);
+    }
+
+    function spiralEventToCanvasPoint(event) {
+      const rect = spiralCanvas.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      return {
+        x: (event.clientX - rect.left) * dpr,
+        y: (event.clientY - rect.top) * dpr
+      };
+    }
+
+    function updateSpiralHover(event) {
+      if (!wheelState.spiralPoints.length) return;
+      const p = spiralEventToCanvasPoint(event);
+      let nearest = null;
+      let best = Infinity;
+
+      for (const point of wheelState.spiralPoints) {
+        const dx = point.x - p.x;
+        const dy = point.y - p.y;
+        const dist2 = (dx * dx) + (dy * dy);
+        if (dist2 < (point.r * point.r) && dist2 < best) {
+          best = dist2;
+          nearest = point;
+        }
+      }
+
+      if (!nearest) {
+        wheelState.hoveredWeek = null;
+        spiralTooltip.textContent = "Hover highlighted points for week/date details";
+        const baseDate = parseDate(wheelBaseDate.value);
+        if (baseDate) drawCurrentVisualization(baseDate);
+        return;
+      }
+
+      wheelState.hoveredWeek = nearest.week;
+      spiralTooltip.textContent = `+${nearest.week} week(s) • ${formatDate(nearest.date)}`;
+      const baseDate = parseDate(wheelBaseDate.value);
+      if (baseDate) drawCurrentVisualization(baseDate);
+    }
+
+    function applySpiralPointSelection() {
+      if (wheelState.hoveredWeek === null) return;
+      wheelState.offsetWeeks = clampOffset(wheelState.hoveredWeek);
+      wheelState.snapNote = "";
+      syncWheelInputs();
+      renderWheelResult();
+    }
+
+    function syncWheelInputs() {
+      wheelOffsetInput.value = prettyWeek(wheelState.offsetWeeks);
+      wheelSlider.value = String(wheelState.offsetWeeks);
+    }
+
+    function renderWheelResult() {
+      const base = parseDate(wheelBaseDate.value);
+      if (!base) {
+        setResult(wheelResult, "Please set a valid base date.", true);
+        wheelOffsetLabel.textContent = "+0 week";
+        wheelDateLabel.textContent = "";
+        wheelMeta.textContent = "";
+        flowTrack.innerHTML = "";
+        return;
+      }
+
+      const exactOffset = wheelState.offsetWeeks;
+      const effectiveOffset = roundWeeks(exactOffset, wheelRound.value);
+      const days = effectiveOffset * 7;
+      const resultDate = addDays(base, days);
+
+      wheelOffsetLabel.textContent = `+${effectiveOffset} week${Math.abs(effectiveOffset) === 1 ? "" : "s"}`;
+      wheelDateLabel.textContent = formatDate(resultDate);
+      wheelMeta.textContent = `Drag value ${prettyWeek(exactOffset)}w • ${wheelRound.value} → +${effectiveOffset}w${wheelState.snapNote ? ` • ${wheelState.snapNote}` : ""}`;
+      setResult(
+        wheelResult,
+        `Base date: ${formatDate(base)}\n` +
+        `Result date: ${formatDate(resultDate)}\n` +
+        `${days} day(s) shift\n` +
+        `${exactOffset.toFixed(2)} week(s) exact input\n` +
+        `${effectiveOffset} week(s) rounded (${wheelRound.value})`,
+        false
+      );
+      renderFlowTrack(base);
+      renderWeekStrip(base, wheelState.offsetWeeks);
+      drawCurrentVisualization(base);
+    }
+
+    function updateSpiralRange() {
+      spiralState.rangeWeeks = Number(vizRange.value);
+      const baseDate = parseDate(wheelBaseDate.value);
+      if (baseDate) drawCurrentVisualization(baseDate);
+      saveLastState();
+    }
+
+    function updateVizMode() {
+      spiralState.mode = vizMode.value;
+      vizHelp.textContent = spiralState.mode === "unrolled"
+        ? "Month rows • Gold lines = year"
+        : "Month color • Gold ring = year";
+      const baseDate = parseDate(wheelBaseDate.value);
+      if (baseDate) drawCurrentVisualization(baseDate);
+      saveLastState();
+    }
+
+    function updateVizTheme() {
+      spiralState.theme = vizTheme.value;
+      applyVizTheme();
+      saveLastState();
+    }
+
+    function toggleSpiralAnimation() {
+      spiralState.animate = !spiralState.animate;
+      vizAnimateBtn.textContent = `Animate: ${spiralState.animate ? "On" : "Off"}`;
+      startSpiralAnimation();
+      saveLastState();
+    }
+
+    function onWheelPointerDown(event) {
+      wheelState.dragging = true;
+      wheelState.dragStartX = event.clientX;
+      wheelState.dragStartOffset = wheelState.offsetWeeks;
+      dateWheel.setPointerCapture(event.pointerId);
+      dateWheel.classList.add("dragging");
+    }
+
+    function onWheelPointerMove(event) {
+      if (!wheelState.dragging) return;
+      const deltaX = event.clientX - wheelState.dragStartX;
+      wheelState.offsetWeeks = clampOffset(wheelState.dragStartOffset + (deltaX / PIXELS_PER_WEEK));
+      wheelState.snapNote = "";
+      syncWheelInputs();
+      queueWheelRender();
+    }
+
+    function onWheelPointerUp(event) {
+      wheelState.dragging = false;
+      if (event.pointerId !== undefined) {
+        dateWheel.releasePointerCapture(event.pointerId);
+      }
+      dateWheel.classList.remove("dragging");
+    }
+
+    function snapToTarget() {
+      const base = parseDate(wheelBaseDate.value);
+      const year = Number(targetYear.value);
+      const monthIndex = Number(targetMonth.value);
+      const day = Number(targetDay.value);
+
+      if (!base) {
+        setResult(wheelResult, "Please set a valid base date first.", true);
+        return;
+      }
+      if (!Number.isInteger(year) || year < 1900 || year > 2500) {
+        setResult(wheelResult, "Target year must be 1900 to 2500.", true);
+        return;
+      }
+
+      const max = maxDayInMonth(year, monthIndex);
+      if (!Number.isInteger(day) || day < 1 || day > max) {
+        setResult(wheelResult, `Target day must be 1 to ${max}.`, true);
+        return;
+      }
+
+      const target = new Date(year, monthIndex, day);
+      const weeks = diffDays(base, target) / 7;
+      wheelState.offsetWeeks = clampOffset(weeks);
+      wheelState.snapNote = weeks < 0 ? "target before base, set to 0w" : "";
+      syncWheelInputs();
+      renderWheelResult();
+      saveLastState();
+    }
+
+    function calculateBetween() {
+      const start = parseDate(betweenStart.value);
+      const end = parseDate(betweenEnd.value);
+      if (!start || !end) {
+        setResult(betweenResult, "Please enter both start and end dates.", true);
+        return;
+      }
+      const days = diffDays(start, end);
+      const exactWeeks = days / 7;
+      const rounded = roundWeeks(exactWeeks, betweenRound.value);
+      setResult(
+        betweenResult,
+        `From ${formatDate(start)} to ${formatDate(end)}\n${days} day(s)\n${exactWeeks.toFixed(2)} week(s) exact\n${rounded} week(s) rounded (${betweenRound.value})`,
+        false
+      );
+    }
+
+    function calculateUntil() {
+      const start = parseDate(untilStart.value);
+      const year = Number(untilYear.value);
+      const monthIndex = Number(untilMonth.value);
+      const day = Number(untilDay.value);
+
+      if (!start) {
+        setResult(untilResult, "Please enter a valid start date.", true);
+        spiralTooltip.textContent = "Tap or hover any point";
+        spiralTooltip.classList.remove("active");
+      }
+      if (!Number.isInteger(year) || year < 1900 || year > 2500) {
+        setResult(untilResult, "Please enter a target year between 1900 and 2500.", true);
+        return;
+      }
+
+      const maxDay = maxDayInMonth(year, monthIndex);
+      spiralTooltip.classList.add("active");
+      if (!Number.isInteger(day) || day < 1 || day > maxDay) {
+        setResult(untilResult, `Target day must be 1 to ${maxDay} for that month.`, true);
+        return;
+      }
+
+      const target = new Date(year, monthIndex, day);
+      const days = diffDays(start, target);
+      const exactWeeks = days / 7;
+      const rounded = roundWeeks(exactWeeks, untilRound.value);
+      setResult(
+        untilResult,
+        `From ${formatDate(start)} to ${formatDate(target)}\n${days} day(s)\n${exactWeeks.toFixed(2)} week(s) exact\n${rounded} week(s) rounded (${untilRound.value})`,
+        false
+      );
+    }
+
+    function calculateShift() {
+      const start = parseDate(shiftStart.value);
+      const weeks = Number(shiftWeeks.value);
+      if (!start) {
+        setResult(shiftResult, "Please enter a valid base date.", true);
+        return;
+      }
+      if (Number.isNaN(weeks)) {
+        setResult(shiftResult, "Please enter a numeric week value.", true);
+        return;
+      }
+      if (weeks < 0) {
+        setResult(shiftResult, "Please enter a non-negative week value.", true);
+        return;
+      }
+
+      const daysToAdd = weeks * 7;
+      const shifted = addDays(start, daysToAdd);
+      setResult(
+        shiftResult,
+        `Base date: ${formatDate(start)}\nWeeks: ${weeks}\nResult date: ${formatDate(shifted)}\n(${daysToAdd.toFixed(2)} day(s) shift)`,
+        false
+      );
+    }
+
+    function initDefaults() {
+      const now = new Date();
+      const today = todayISO();
+      const isMobile = window.matchMedia("(max-width: 760px)").matches;
+
+      wheelBaseDate.value = today;
+      betweenStart.value = today;
+      betweenEnd.value = today;
+      untilStart.value = today;
+      shiftStart.value = today;
+
+      untilMonth.value = String(now.getMonth());
+      untilYear.value = String(now.getFullYear());
+      untilDay.value = "1";
+
+      targetMonth.value = String(now.getMonth());
+      targetYear.value = String(now.getFullYear());
+      targetDay.value = "1";
+
+      if (isMobile) {
+        vizMode.value = "unrolled";
+        vizRange.value = "52";
+      }
+    }
+
+    setMonthOptions();
+    const storedTheme = safeStorageGet("cps_date_tool_viz_theme_v1");
+    if (storedTheme && ["cps", "colorblind", "high_contrast"].includes(storedTheme)) {
+      spiralState.theme = storedTheme;
+      vizTheme.value = storedTheme;
+    }
+    renderMonthLegend();
+    refreshPresetOptions();
+    initDefaults();
+    updateVizMode();
+    updateSpiralRange();
+    syncUntilDayMax();
+    syncTargetDayMax();
+    renderWheelResult();
+    vizAnimateBtn.textContent = "Animate: Off";
+    if (!loadLastStateIfAny()) {
+      applyPresetState(BUILT_IN_PRESETS[0].state, "Using Quick Quote preset");
+    }
+
+    tabButtons.forEach((btn) => btn.addEventListener("click", () => setTabs(btn.dataset.tab)));
+
+    spiralCanvas.addEventListener("mousemove", updateSpiralHover);
+    spiralCanvas.addEventListener("mouseleave", () => {
+      wheelState.hoveredWeek = null;
+      spiralTooltip.textContent = "Tap or hover any point";
+      spiralTooltip.classList.remove("active");
+      const baseDate = parseDate(wheelBaseDate.value);
+      if (baseDate) drawCurrentVisualization(baseDate);
+    });
+    spiralCanvas.addEventListener("click", applySpiralPointSelection);
+    vizRange.addEventListener("change", updateSpiralRange);
+    vizMode.addEventListener("change", updateVizMode);
+    vizTheme.addEventListener("change", updateVizTheme);
+    vizAnimateBtn.addEventListener("click", toggleSpiralAnimation);
+    applyPresetBtn.addEventListener("click", applySelectedPreset);
+    savePresetBtn.addEventListener("click", saveCurrentAsUserPreset);
+
+    wheelBaseDate.addEventListener("input", () => {
+      renderWheelResult();
+      saveLastState();
+    });
+
+    applyVizTheme();
+    wheelRound.addEventListener("change", () => {
+      renderWheelResult();
+      saveLastState();
+    });
+
+    wheelOffsetInput.addEventListener("input", () => {
+      wheelState.offsetWeeks = clampOffset(Number(wheelOffsetInput.value) || 0);
+      wheelState.snapNote = "";
+      syncWheelInputs();
+      queueWheelRender();
+      saveLastState();
+    });
+
+    wheelSlider.addEventListener("input", () => {
+      wheelState.offsetWeeks = clampOffset(Number(wheelSlider.value));
+      wheelState.snapNote = "";
+      syncWheelInputs();
+      queueWheelRender();
+      saveLastState();
+    });
+
+    dateWheel.addEventListener("pointerdown", onWheelPointerDown);
+    dateWheel.addEventListener("pointermove", onWheelPointerMove);
+    dateWheel.addEventListener("pointerup", onWheelPointerUp);
+    dateWheel.addEventListener("pointercancel", onWheelPointerUp);
+    dateWheel.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const direction = event.deltaY > 0 ? -1 : 1;
+      const step = event.shiftKey ? 2 : 0.5;
+      wheelState.offsetWeeks = clampOffset(wheelState.offsetWeeks + (direction * step));
+      wheelState.snapNote = "";
+      syncWheelInputs();
+      queueWheelRender();
+      saveLastState();
+    }, { passive: false });
+
+    document.querySelectorAll("[data-jump]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const jump = Number(btn.dataset.jump);
+        wheelState.offsetWeeks = clampOffset(wheelState.offsetWeeks + jump);
+        wheelState.snapNote = "";
+        syncWheelInputs();
+        queueWheelRender();
+        saveLastState();
+      });
+    });
+
+    window.addEventListener("resize", () => {
+      queueWheelRender();
+      const baseDate = parseDate(wheelBaseDate.value);
+      if (baseDate) drawCurrentVisualization(baseDate);
+    });
+
+    snapBtn.addEventListener("click", snapToTarget);
+    targetMonth.addEventListener("change", syncTargetDayMax);
+    targetYear.addEventListener("input", syncTargetDayMax);
+
+    betweenBtn.addEventListener("click", calculateBetween);
+    untilBtn.addEventListener("click", calculateUntil);
+    shiftBtn.addEventListener("click", calculateShift);
+    untilMonth.addEventListener("change", syncUntilDayMax);
+    untilYear.addEventListener("input", syncUntilDayMax);
+  </script>
+</body>
+</html>
