@@ -13,6 +13,7 @@ The app is implemented as a **single self-contained HTML file**:
 - `index.html` (GitHub Pages entrypoint)
 - `date_tool.html` (source copy)
 - `404.html` (fallback copy for GitHub Pages)
+- `manifest.webmanifest` + `service-worker.js` + `app-icon.svg` (PWA install support)
 
 No install, build, server, or dependencies are required.
 
@@ -21,6 +22,14 @@ No install, build, server, or dependencies are required.
 1. Open `index.html` in any modern browser.
 2. Use **Date Wheel** (default tab) for interactive spinning workflow.
 3. Use **Manual Mode** tab for the three direct calculators.
+
+## Install as App (PWA)
+
+When hosted on GitHub Pages (HTTPS), it can be installed:
+
+- **iPhone/iPad (Safari):** Share → **Add to Home Screen**
+- **Android (Chrome):** menu → **Install app** / **Add to Home screen**
+- **Desktop (Chrome/Edge):** install icon in address bar
 
 ## GitHub Pages (Simple Setup)
 
@@ -41,6 +50,9 @@ When updating the app, keep these files synchronized:
 - `date_tool.html`
 - `index.html`
 - `404.html`
+- `manifest.webmanifest`
+- `service-worker.js`
+- `app-icon.svg`
 
 ## Main UI (Date Wheel)
 
